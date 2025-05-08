@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WoofAI Presale</title>
+  <script src="https://unpkg.com/@solana/web3.js@1.73.2/lib/index.iife.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+    button { padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    input { padding: 10px; width: 100%; margin-top: 10px; margin-bottom: 20px; }
+    #status { margin-top: 10px; color: green; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>WoofAI Token Presale</h2>
+    <p id="wallet-address">Wallet not connected</p>
+    <button onclick="connectWallet()">Connect Wallet</button>
+    <div id="presale-info"></div><input type="number" id="solAmount" placeholder="Enter SOL amount" />
+<button onclick="buyTokens()">Buy Tokens</button>
+<p id="status"></p>
+
+  </div>  <script>
+    let provider = null;
+    let publicKey = null;
+
+    async function connectWallet() {
+      if (window.solana && window.solana.isPhantom) {
+        try {
+          const resp = await window.solana.connect();
+          publicKey = resp.publicKey.toString();
+          document.getElementById('wallet-address').innerText = 'Connected: ' + publicKey;
+        } catch (err) {
+          console.error('Connection failed:', err);
+        }
+      } else {
+        alert('Phantom wallet not found');
+      }
+    }
+
+    async function fetchPresaleInfo() {
+      try {
+        const res = await fetch('/api/presale-info');
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('presale-info').innerHTML = `
+            <p>Phase: ${data.currentPhase}</p>
+            <p>Price: ${data.priceDisplay}</p>
+            <p>Tokens Sold: ${data.tokensSold.toLocaleString()}</p>
+            <p>Time Remaining: ${Math.max(0, Math.floor(data.timeRemaining / 1000))}s</p>
+          `;
+        }
+      } catch (err) {
+        console.error('Failed to fetch presale info:', err);
+      }
+    }
+
+    async function buyTokens() {
+      const amount = parseFloat(document.getElementById('solAmount').value);
+      if (!publicKey || isNaN(amount) || amount <= 0) {
+        alert('Connect wallet and enter valid amount');
+        return;
+      }
+
+      const res = await fetch('/api/buy-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buyer: publicKey, amount })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const tx = data.transaction;
+        const txSig = await window.solana.signAndSendTransaction(
+          solanaWeb3.Transaction.from(Uint8Array.from(tx))
+        );
+        document.getElementById('status').innerText = 'Transaction sent: ' + txSig.signature;
+      } else {
+        document.getElementById('status').innerText = 'Error: ' + data.message;
+      }
+    }
+
+    window.onload = fetchPresaleInfo;
+  </script></body>
+</html>
