@@ -1,85 +1,620 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WoofAI Presale</title>
+  <title>WoofAI Token Presale</title>
   <script src="https://unpkg.com/@solana/web3.js@1.73.2/lib/index.iife.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-    button { padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    input { padding: 10px; width: 100%; margin-top: 10px; margin-bottom: 20px; }
-    #status { margin-top: 10px; color: green; }
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #f59e0b;
+      --dark: #1e293b;
+      --light: #f8fafc;
+      --success: #10b981;
+      --danger: #ef4444;
+      --gray: #64748b;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      padding: 0;
+      margin: 0;
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      min-height: 100vh;
+      color: var(--dark);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .logo img {
+      height: 50px;
+      width: auto;
+    }
+    
+    .logo h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--primary);
+    }
+    
+    .wallet-connect {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .wallet-btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 2px solid var(--primary);
+      background: white;
+      color: var(--primary);
+    }
+    
+    .wallet-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .wallet-btn.connected {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .wallet-btn.solflare {
+      border-color: #1682e6;
+      color: #1682e6;
+    }
+    
+    .wallet-btn.solflare:hover, .wallet-btn.solflare.connected {
+      background: #1682e6;
+      color: white;
+    }
+    
+    .card {
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      text-align: center;
+    }
+    
+    .presale-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: var(--light);
+      padding: 1.5rem;
+      border-radius: 12px;
+      text-align: center;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--gray);
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    
+    .progress-container {
+      margin: 2rem 0;
+    }
+    
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    
+    .progress-bar {
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 6px;
+      transition: width 0.5s ease;
+    }
+    
+    .buy-section {
+      margin-top: 2rem;
+    }
+    
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .input-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .buy-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .buy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    .buy-btn:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .status {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .status.success {
+      display: block;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+    
+    .status.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+    
+    .timer {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--secondary);
+      text-align: center;
+      margin: 1rem 0;
+    }
+    
+    .wallet-info {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--light);
+      border-radius: 8px;
+      font-family: monospace;
+      word-break: break-all;
+    }
+    
+    @media (max-width: 768px) {
+      .presale-stats {
+        grid-template-columns: 1fr;
+      }
+      
+      .wallet-connect {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>WoofAI Token Presale</h2>
-    <p id="wallet-address">Wallet not connected</p>
-    <button onclick="connectWallet()">Connect Wallet</button>
-    <div id="presale-info"></div><input type="number" id="solAmount" placeholder="Enter SOL amount" />
-<button onclick="buyTokens()">Buy Tokens</button>
-<p id="status"></p>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img src="https://crimson-certain-wolf-336.mypinata.cloud/ipfs/bafybeih3iwshjpvlxlsbg6mazrv77qu3inzpmixvznyaihqa2ut674nklu" alt="WoofAI Logo">
+        <h1>WoofAI</h1>
+      </div>
+      <div class="wallet-connect">
+        <button id="phantom-btn" class="wallet-btn" onclick="connectWallet('phantom')">
+          <i class="fas fa-wallet"></i> Phantom
+        </button>
+        <button id="solflare-btn" class="wallet-btn solflare" onclick="connectWallet('solflare')">
+          <i class="fas fa-wallet"></i> Solflare
+        </button>
+      </div>
+    </header>
+    
+    <div class="card">
+      <h2 class="card-title">WoofAI Token Presale</h2>
+      
+      <div id="timer" class="timer">
+        Loading presale timer...
+      </div>
+      
+      <div class="presale-stats">
+        <div class="stat-card">
+          <div class="stat-label">Current Phase</div>
+          <div id="current-phase" class="stat-value">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Token Price</div>
+          <div id="token-price" class="stat-value">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Tokens Sold</div>
+          <div id="tokens-sold" class="stat-value">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Amount Raised</div>
+          <div id="amount-raised" class="stat-value">-</div>
+        </div>
+      </div>
+      
+      <div class="progress-container">
+        <div class="progress-label">
+          <span>Presale Progress</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div id="wallet-info" class="wallet-info" style="display: none;">
+        Connected: <span id="wallet-address"></span>
+      </div>
+      
+      <div class="buy-section">
+        <div class="input-group">
+          <label for="solAmount" class="input-label">Amount of SOL to invest</label>
+          <input type="number" id="solAmount" class="input-field" placeholder="Enter SOL amount" step="0.01" min="0.01">
+        </div>
+        
+        <div class="input-group">
+          <label for="tokenAmount" class="input-label">You will receive</label>
+          <input type="text" id="tokenAmount" class="input-field" placeholder="WoofAI tokens" readonly>
+        </div>
+        
+        <button id="buy-btn" class="buy-btn" onclick="buyTokens()" disabled>Connect Wallet to Buy</button>
+        
+        <div id="status" class="status"></div>
+      </div>
+    </div>
+  </div>
 
-  </div>  <script>
+  <script>
     let provider = null;
     let publicKey = null;
-
-    async function connectWallet() {
-      if (window.solana && window.solana.isPhantom) {
-        try {
-          const resp = await window.solana.connect();
-          publicKey = resp.publicKey.toString();
-          document.getElementById('wallet-address').innerText = 'Connected: ' + publicKey;
-        } catch (err) {
-          console.error('Connection failed:', err);
+    let presaleInfo = null;
+    
+    // Initialize presale data in localStorage if not exists
+    if (!localStorage.getItem('woofaiPresaleData')) {
+      const initialPresaleData = {
+        tokensSold: 0,
+        amountRaised: 0, // in SOL
+        transactions: []
+      };
+      localStorage.setItem('woofaiPresaleData', JSON.stringify(initialPresaleData));
+    }
+    
+    // Get presale data from localStorage
+    function getPresaleData() {
+      return JSON.parse(localStorage.getItem('woofaiPresaleData'));
+    }
+    
+    // Update presale data in localStorage
+    function updatePresaleData(tokensBought, solAmount, txSignature) {
+      const presaleData = getPresaleData();
+      presaleData.tokensSold += tokensBought;
+      presaleData.amountRaised += solAmount;
+      presaleData.transactions.push({
+        txSignature,
+        buyer: publicKey,
+        amount: solAmount,
+        tokens: tokensBought,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('woofaiPresaleData', JSON.stringify(presaleData));
+      return presaleData;
+    }
+    
+    // Connect to wallet (Phantom or Solflare)
+    async function connectWallet(walletType) {
+      try {
+        if (walletType === 'phantom') {
+          if (window.solana && window.solana.isPhantom) {
+            const response = await window.solana.connect();
+            publicKey = response.publicKey.toString();
+            updateWalletUI('phantom');
+          } else {
+            throw new Error('Phantom wallet not installed');
+          }
+        } else if (walletType === 'solflare') {
+          if (window.solflare && window.solflare.isSolflare) {
+            const response = await window.solflare.connect();
+            publicKey = response.publicKey.toString();
+            updateWalletUI('solflare');
+          } else {
+            throw new Error('Solflare wallet not installed');
+          }
         }
-      } else {
-        alert('Phantom wallet not found');
+        
+        document.getElementById('wallet-info').style.display = 'block';
+        document.getElementById('wallet-address').textContent = publicKey;
+        document.getElementById('buy-btn').disabled = false;
+        document.getElementById('buy-btn').textContent = 'Buy WoofAI Tokens';
+        
+      } catch (err) {
+        showStatus('error', `Failed to connect wallet: ${err.message}`);
+        console.error('Wallet connection error:', err);
       }
     }
-
+    
+    function updateWalletUI(walletType) {
+      // Reset all buttons
+      document.getElementById('phantom-btn').classList.remove('connected');
+      document.getElementById('solflare-btn').classList.remove('connected');
+      
+      // Highlight connected wallet
+      if (walletType === 'phantom') {
+        document.getElementById('phantom-btn').classList.add('connected');
+      } else if (walletType === 'solflare') {
+        document.getElementById('solflare-btn').classList.add('connected');
+      }
+    }
+    
+    // Fetch presale info from API (using your original endpoints)
     async function fetchPresaleInfo() {
       try {
+        // Using your original API endpoint
         const res = await fetch('/api/presale-info');
         const data = await res.json();
+        
         if (data.success) {
-          document.getElementById('presale-info').innerHTML = `
-            <p>Phase: ${data.currentPhase}</p>
-            <p>Price: ${data.priceDisplay}</p>
-            <p>Tokens Sold: ${data.tokensSold.toLocaleString()}</p>
-            <p>Time Remaining: ${Math.max(0, Math.floor(data.timeRemaining / 1000))}s</p>
-          `;
+          presaleInfo = data;
+          
+          // Merge with our localStorage data
+          const localData = getPresaleData();
+          presaleInfo.tokensSold = localData.tokensSold;
+          presaleInfo.amountRaised = localData.amountRaised;
+          
+          updatePresaleUI();
+          startCountdown(data.timeRemaining);
+          
+          // Update token amount when SOL input changes
+          document.getElementById('solAmount').addEventListener('input', updateTokenAmount);
+        } else {
+          throw new Error(data.message || 'Failed to fetch presale info');
         }
       } catch (err) {
-        console.error('Failed to fetch presale info:', err);
+        // Fallback to mock data if API fails (for development)
+        console.error('API fetch failed, using mock data:', err);
+        
+        const localData = getPresaleData();
+        presaleInfo = {
+          success: true,
+          currentPhase: "Phase 1",
+          price: 0.0001, // 1 SOL = 10,000 WOOF
+          priceDisplay: "1 SOL = 10,000 WOOF",
+          tokensSold: localData.tokensSold,
+          totalSupply: 100000000,
+          timeRemaining: 86400000, // 24 hours in ms
+          amountRaised: localData.amountRaised
+        };
+        
+        updatePresaleUI();
+        startCountdown(presaleInfo.timeRemaining);
+        document.getElementById('solAmount').addEventListener('input', updateTokenAmount);
       }
     }
-
-    async function buyTokens() {
-      const amount = parseFloat(document.getElementById('solAmount').value);
-      if (!publicKey || isNaN(amount) || amount <= 0) {
-        alert('Connect wallet and enter valid amount');
+    
+    function updatePresaleUI() {
+      document.getElementById('current-phase').textContent = presaleInfo.currentPhase;
+      document.getElementById('token-price').textContent = presaleInfo.priceDisplay;
+      document.getElementById('tokens-sold').textContent = presaleInfo.tokensSold.toLocaleString();
+      document.getElementById('amount-raised').textContent = `${presaleInfo.amountRaised.toFixed(2)} SOL`;
+      
+      // Calculate progress
+      const progress = (presaleInfo.tokensSold / presaleInfo.totalSupply) * 100;
+      document.getElementById('progress-fill').style.width = `${progress}%`;
+      document.getElementById('progress-percent').textContent = `${progress.toFixed(2)}%`;
+    }
+    
+    function startCountdown(initialTimeRemaining) {
+      let timeLeft = initialTimeRemaining;
+      
+      const timer = setInterval(() => {
+        timeLeft -= 1000;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          document.getElementById('timer').textContent = "Presale has ended!";
+          document.getElementById('buy-btn').disabled = true;
+          return;
+        }
+        
+        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        
+        document.getElementById('timer').textContent = 
+          `Presale ends in: ${hours}h ${minutes}m ${seconds}s`;
+      }, 1000);
+    }
+    
+    function updateTokenAmount() {
+      const solAmount = parseFloat(document.getElementById('solAmount').value);
+      
+      if (isNaN(solAmount)) {
+        document.getElementById('tokenAmount').value = '';
         return;
       }
-
-      const res = await fetch('/api/buy-tokens', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buyer: publicKey, amount })
-      });
-      const data = await res.json();
-      if (data.success) {
-        const tx = data.transaction;
-        const txSig = await window.solana.signAndSendTransaction(
-          solanaWeb3.Transaction.from(Uint8Array.from(tx))
-        );
-        document.getElementById('status').innerText = 'Transaction sent: ' + txSig.signature;
-      } else {
-        document.getElementById('status').innerText = 'Error: ' + data.message;
+      
+      if (presaleInfo && presaleInfo.price) {
+        const tokenAmount = solAmount / presaleInfo.price;
+        document.getElementById('tokenAmount').value = 
+          `${tokenAmount.toLocaleString(undefined, {maximumFractionDigits: 0})} WOOF`;
       }
     }
-
-    window.onload = fetchPresaleInfo;
-  </script></body>
-</html>
+    
+    // Buy tokens function (using your original API endpoint)
+    async function buyTokens() {
+      const solAmount = parseFloat(document.getElementById('solAmount').value);
+      
+      if (!publicKey) {
+        showStatus('error', 'Please connect your wallet first');
+        return;
+      }
+      
+      if (isNaN(solAmount) || solAmount <= 0) {
+        showStatus('error', 'Please enter a valid SOL amount');
+        return;
+      }
+      
+      try {
+        // Using your original API endpoint
+        const res = await fetch('/api/buy-tokens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ buyer: publicKey, amount: solAmount })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          const tx = data.transaction;
+          
+          // Sign and send transaction using the connected wallet
+          let txSig;
+          if (window.solana && document.getElementById('phantom-btn').classList.contains('connected')) {
+            txSig = await window.solana.signAndSendTransaction(
+              solanaWeb3.Transaction.from(Uint8Array.from(tx))
+            );
+          } else if (window.solflare && document.getElementById('solflare-btn').classList.contains('connected')) {
+            txSig = await window.solflare.signAndSendTransaction(
+              solanaWeb3.Transaction.from(Uint8Array.from(tx))
+            );
+          }
+          
+          // Calculate tokens bought
+          const tokensBought = solAmount / presaleInfo.price;
+          
+          // Update local storage with the purchase
+          updatePresaleData(tokensBought, solAmount, txSig.signature);
+          
+          showStatus('success', `Transaction successful! TX: ${txSig.signature}`);
+          console.log('Transaction signature:', txSig.signature);
+          
+          // Refresh presale info after purchase
+          setTimeout(fetchPresaleInfo, 2000);
+          
+          // Clear input field
+          document.getElementById('solAmount').value = '';
+          document.getElementById('tokenAmount').value = '';
+        } else {
+          throw new Error(data.message || 'Failed to process purchase');
+        }
+      } catch (err) {
+        showStatus('error', `Transaction failed: ${err.message}`);
+        console.error('Buy tokens error:', err);
+      }
+    }
+    
+    function showStatus(type, message) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = `status ${type}`;
+      statusEl.textContent = message;
+      statusEl.style.display = 'block';
+      
+      // Hide status after 5 seconds
+      setTimeout(() => {
+        statusEl.style.display = 'none';
+      }, 5000);
+    }
+    
+    // Check for wallet providers on page load
+    window.addEventListener('load', () => {
+      if (window.solana && window.solana.isPhantom) {
+        document.getElementById('phantom-btn').style.display = 'flex';
+      } else {
+        document.getElementById('phantom-btn').style.display = 'none';
+      }
+      
+      if (window.solflare && window.solflare.isSolflare) {
+        document.getElementById('solflare-btn').style.display = 'flex';
+      } else {
+        document.getElementById('solflare-btn').style.display = 'none';
+      }
+      
+      fetchPresaleInfo();
+    });
+    
+    // Handle wallet disconnect
+    window.addEventListener('unload', () => {
+      if (window.solana) {
+        window.solana.disconnect();
+      }
+      
+      if (window.solflare) {
+        window.solflare.disconnect();
+      }
+    });
+  </script>
+</body>
+  </html>q
