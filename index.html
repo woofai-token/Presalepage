@@ -94,24 +94,22 @@
             color: green;
             font-size: 14px;
         }
-        
-        #loader {
-            display: none;
-            text-align: center;
-            color: #0ff;
-        }
     </style>
 </head>
 <body>
 
-<div class="status" id="statusMessage">Connecting to server...</div>
-
 <div class="container">
     <h2>WoFAI Token Presale</h2>
+    
+    <!-- Status Message -->
+    <div class="status" id="statusMessage">Connecting to server...</div>
+
+    <!-- Wallet Connection Section -->
     <div id="walletConnection" style="display: block;">
         <button class="button" onclick="connectWallet()">Connect Wallet</button>
     </div>
 
+    <!-- Purchase Section -->
     <div id="purchaseSection" style="display: none;">
         <div class="input-wrapper">
             <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana Logo" />
@@ -124,13 +122,14 @@
         <button class="button" onclick="handlePurchase()">Confirm Purchase</button>
     </div>
 
+    <!-- Wallet Balance Section -->
     <div class="wallet-info" id="walletBalance">Solana Balance: 0 SOL</div>
+
+    <!-- Error and Success Messages -->
     <div id="errorMessage" class="error-message"></div>
     <div id="successMessage" class="success-message"></div>
 
 </div>
-
-<div id="loader">Loading...</div>
 
 <script>
     const WOFIAI_RATE = 1000000; // 1 SOL = 1,000,000 WoFAI
@@ -139,17 +138,21 @@
     let walletPublicKey = null;
     let walletBalance = 0;
 
-    // Start loading and check server status
+    // Check if server is active
     async function checkServerStatus() {
-        const response = await fetch("https://woofaiserver.onrender.com/");
-        if (response.ok) {
-            document.getElementById("statusMessage").innerText = "Connected";
-            document.getElementById("loader").style.display = "none";
-        } else {
-            document.getElementById("statusMessage").innerText = "Failed to connect to server!";
+        try {
+            const response = await fetch("https://woofaiserver.onrender.com/");
+            if (response.ok) {
+                document.getElementById("statusMessage").innerText = "Server Connected";
+            } else {
+                document.getElementById("statusMessage").innerText = "Server Connection Failed";
+            }
+        } catch (error) {
+            document.getElementById("statusMessage").innerText = "Error Connecting to Server";
         }
     }
 
+    // Initiate the server connection check
     checkServerStatus();
 
     // Connect wallet
@@ -166,7 +169,7 @@
         getWalletBalance(walletPublicKey);
     }
 
-    // Get wallet SOL balance
+    // Get wallet balance
     async function getWalletBalance(publicKey) {
         const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
         walletBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
@@ -189,24 +192,24 @@
         }
     }
 
-    // Handle purchase
+    // Handle purchase logic
     async function handlePurchase() {
         const solAmount = parseFloat(document.getElementById("solAmount").value);
         const wofaiAmount = parseFloat(document.getElementById("wofaiAmount").value);
 
         if (isNaN(solAmount) || isNaN(wofaiAmount)) {
-            showError("Please enter a valid amount for SOL or WoFAI.");
+            showError("Please enter valid amounts for SOL or WoFAI.");
             return;
         }
 
         if (solAmount > walletBalance) {
-            showError("Insufficient balance to make this purchase.");
+            showError("Insufficient SOL balance.");
             return;
         }
 
         showError("");
+
         try {
-            // Call backend API for transaction processing
             const response = await fetch("https://woofaiserver.onrender.com/handle-payment", {
                 method: "POST",
                 headers: {
@@ -230,12 +233,12 @@
         }
     }
 
-    // Show error message
+    // Show error messages
     function showError(message) {
         document.getElementById("errorMessage").innerText = message;
     }
 
-    // Show success message
+    // Show success messages
     function showSuccess(message) {
         document.getElementById("successMessage").innerText = message;
     }
