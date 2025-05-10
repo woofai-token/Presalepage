@@ -1,168 +1,211 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WoFAI Presale</title>
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #f5f7fa, #c3cfe2);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
-    }
-    header {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2rem;
-      background-color: #4a148c;
-      color: white;
-      font-size: 1.2rem;
-    }
-    .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      max-width: 500px;
-      width: 100%;
-    }
-    select, button, input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: #4a148c;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-    #status {
-      margin-top: 20px;
-      font-weight: bold;
-      text-align: center;
-    }
-    .highlight {
-      color: #4a148c;
-      font-weight: bold;
-    }
-    @media screen and (max-width: 600px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div>WoFAI Token Presale</div>
-    <div id="balance">Balance: 0 SOL</div>
-  </header>  <div class="container">
-    <p>1 SOL = <span class="highlight">1,000,000</span> WoFAI</p><select id="wallet-select">
-  <option value="phantom">Phantom</option>
-  <option value="solflare">Solflare</option>
-</select>
-
-<button id="connect-btn">Connect Wallet</button>
-
-<input type="number" id="solAmount" placeholder="Enter SOL" step="0.01" min="0.01">
-<p>You will get: <span id="woofaiAmount">0</span> WoFAI</p>
-
-<button id="buy-btn">Buy Now</button>
-
-<div id="status"></div>
-
-  </div>  <script>
-    const receiverAddress = "GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy";
-    let provider = null;
-    let userPublicKey = null;
-    const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-
-    const showStatus = (msg, isError = true) => {
-      const el = document.getElementById("status");
-      el.innerText = msg;
-      el.style.color = isError ? "red" : "green";
-    };
-
-    const updateBalance = async () => {
-      try {
-        const balance = await connection.getBalance(new solanaWeb3.PublicKey(userPublicKey));
-        document.getElementById("balance").innerText = `Balance: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(3)} SOL`;
-      } catch {
-        document.getElementById("balance").innerText = `Balance: 0 SOL`;
-      }
-    }
-
-    document.getElementById("connect-btn").onclick = async () => {
-      const selected = document.getElementById("wallet-select").value;
-      try {
-        if (selected === "phantom" && window.solana && window.solana.isPhantom) {
-          provider = window.solana;
-        } else if (selected === "solflare" && window.solflare && window.solflare.isSolflare) {
-          provider = window.solflare;
-        } else {
-          showStatus("Selected wallet not found. Install it.");
-          return;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WoFAI Token Presale</title>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react@0.9.0/dist/umd/index.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+            margin: 0;
+            box-sizing: border-box;
         }
 
-        const resp = await provider.connect();
-        userPublicKey = resp.publicKey.toString();
-        showStatus("Connected: " + userPublicKey, false);
-        updateBalance();
-      } catch (err) {
-        console.error(err);
-        showStatus("Wallet connection failed.");
-      }
-    };
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+        }
 
-    document.getElementById("solAmount").oninput = (e) => {
-      const sol = parseFloat(e.target.value);
-      document.getElementById("woofaiAmount").innerText = sol > 0 ? sol * 1000000 : 0;
-    };
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
 
-    document.getElementById("buy-btn").onclick = async () => {
-      if (!provider || !userPublicKey) {
-        showStatus("Connect your wallet first.");
-        return;
-      }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
 
-      const amount = parseFloat(document.getElementById("solAmount").value);
-      if (!amount || amount <= 0) {
-        showStatus("Enter a valid SOL amount.");
-        return;
-      }
+        .button {
+            background-color: #0078d4;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 20px;
+            width: 100%;
+        }
 
-      try {
-        const transaction = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: new solanaWeb3.PublicKey(userPublicKey),
-            toPubkey: new solanaWeb3.PublicKey(receiverAddress),
-            lamports: amount * solanaWeb3.LAMPORTS_PER_SOL
-          })
-        );
+        .button:hover {
+            background-color: #005a8c;
+        }
 
-        transaction.feePayer = new solanaWeb3.PublicKey(userPublicKey);
-        const blockhashObj = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhashObj.blockhash;
+        .wallet-info {
+            text-align: right;
+            font-size: 14px;
+            color: #555;
+        }
 
-        const signed = await provider.signTransaction(transaction);
-        const sig = await connection.sendRawTransaction(signed.serialize());
-        showStatus("Transaction sent: " + sig, false);
-        updateBalance();
-      } catch (err) {
-        console.error(err);
-        showStatus("Transaction failed: " + (err.message || err));
-      }
-    };
-  </script></body>
+        .error-message {
+            color: red;
+            font-size: 14px;
+        }
+
+        .success-message {
+            color: green;
+            font-size: 14px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .input-wrapper img {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>WoFAI Token Presale</h2>
+        <div class="wallet-info">
+            <div id="walletBalance">Solana Balance: 0 SOL</div>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <div id="sign-in">
+            <button class="button" onclick="connectWallet()">Connect Wallet</button>
+        </div>
+
+        <div id="purchaseSection" style="display: none;">
+            <div class="input-wrapper">
+                <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana Logo" class="logo"/>
+                <input type="number" id="solAmount" class="input-field" placeholder="Enter SOL Amount" oninput="updateWoFaiAmount()" />
+            </div>
+
+            <div class="input-wrapper">
+                <img src="https://crimson-certain-wolf-336.mypinata.cloud/ipfs/bafybeih3iwshjpvlxlsbg6mazrv77qu3inzpmixvznyaihqa2ut674nklu" alt="WoFAI Logo" class="logo"/>
+                <input type="number" id="wofaiAmount" class="input-field" placeholder="Enter WoFAI Amount" oninput="updateSolAmount()" />
+            </div>
+
+            <button class="button" onclick="handlePurchase()">Confirm Purchase</button>
+        </div>
+
+    </div>
+
+    <script>
+        let walletPublicKey = null;
+        let walletBalance = 0;
+        const WOFIAI_RATE = 1000000; // 1 SOL = 1,000,000 WoFAI
+        const connection = new solanaWeb3.Connection("https://mainnet.helius-rpc.com/?api-key=fabdaf9f-b1de-4a1b-bb03-58532838cea3");
+
+        // Connect Wallet
+        async function connectWallet() {
+            const provider = new solanaWeb3.WalletAdapterNetwork("mainnet");
+            const wallet = new solanaWeb3.WalletAdapter(provider);
+
+            await wallet.connect();
+            walletPublicKey = wallet.publicKey.toString();
+
+            document.getElementById("sign-in").style.display = "none";
+            document.getElementById("purchaseSection").style.display = "block";
+            
+            getWalletBalance(walletPublicKey);
+        }
+
+        // Get SOL balance
+        async function getWalletBalance(publicKey) {
+            const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
+            walletBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+            document.getElementById("walletBalance").innerText = `Solana Balance: ${walletBalance} SOL`;
+        }
+
+        // Update WoFAI amount based on SOL input
+        function updateWoFaiAmount() {
+            const solAmount = parseFloat(document.getElementById("solAmount").value);
+            if (!isNaN(solAmount)) {
+                document.getElementById("wofaiAmount").value = solAmount * WOFIAI_RATE;
+            }
+        }
+
+        // Update SOL amount based on WoFAI input
+        function updateSolAmount() {
+            const wofaiAmount = parseFloat(document.getElementById("wofaiAmount").value);
+            if (!isNaN(wofaiAmount)) {
+                document.getElementById("solAmount").value = wofaiAmount / WOFIAI_RATE;
+            }
+        }
+
+        // Handle purchase
+        async function handlePurchase() {
+            const solAmount = parseFloat(document.getElementById("solAmount").value);
+            const wofaiAmount = parseFloat(document.getElementById("wofaiAmount").value);
+
+            if (isNaN(solAmount) || isNaN(wofaiAmount)) {
+                showError("Please enter a valid amount for SOL or WoFAI.");
+                return;
+            }
+
+            if (solAmount > walletBalance) {
+                showError("Insufficient balance to make this purchase.");
+                return;
+            }
+
+            showError("");
+            try {
+                // Call backend API for transaction processing
+                const response = await fetch("YOUR_BACKEND_URL/handle-payment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        sender: walletPublicKey,
+                        amount: solAmount,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess(`Transaction successful! TX ID: ${result.tx}`);
+                } else {
+                    showError(result.error || "Transaction failed.");
+                }
+            } catch (err) {
+                showError("An error occurred while processing the transaction.");
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            document.getElementById("errorMessage").innerText = message;
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            document.getElementById("successMessage").innerText = message;
+        }
+    </script>
+</body>
 </html>
