@@ -1,55 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WoFAI Token Presale</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WoFAI Presale</title>
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
   <style>
     body {
-      font-family: sans-serif;
-      background: #f5f5f5;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #f5f7fa, #c3cfe2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 2rem;
-      text-align: center;
     }
-    button, select, input {
-      padding: 10px 16px;
-      margin: 10px;
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background-color: #4a148c;
+      color: white;
+      font-size: 1.2rem;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    select, button, input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 12px;
       font-size: 16px;
-      border-radius: 6px;
-      border: none;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
     button {
       background-color: #4a148c;
       color: white;
       cursor: pointer;
+      border: none;
     }
     #status {
       margin-top: 20px;
-      color: red;
       font-weight: bold;
+      text-align: center;
+    }
+    .highlight {
+      color: #4a148c;
+      font-weight: bold;
+    }
+    @media screen and (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>WoFAI Token Presale</h1>
-  <p>1 SOL = 1,000,000 WoFAI</p>
+  <header>
+    <div>WoFAI Token Presale</div>
+    <div id="balance">Balance: 0 SOL</div>
+  </header>  <div class="container">
+    <p>1 SOL = <span class="highlight">1,000,000</span> WoFAI</p><select id="wallet-select">
+  <option value="phantom">Phantom</option>
+  <option value="solflare">Solflare</option>
+</select>
 
-  <select id="wallet-select">
-    <option value="phantom">Phantom</option>
-    <option value="solflare">Solflare</option>
-  </select>
-  <button id="connect-btn">Connect Wallet</button>
+<button id="connect-btn">Connect Wallet</button>
 
-  <br>
-  <input type="number" id="solAmount" placeholder="Enter amount in SOL" step="0.01" min="0.01">
-  <button id="buy-btn">Buy Now</button>
+<input type="number" id="solAmount" placeholder="Enter SOL" step="0.01" min="0.01">
+<p>You will get: <span id="woofaiAmount">0</span> WoFAI</p>
 
-  <div id="status"></div>
+<button id="buy-btn">Buy Now</button>
 
-  <script>
+<div id="status"></div>
+
+  </div>  <script>
     const receiverAddress = "GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy";
     let provider = null;
     let userPublicKey = null;
+    const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
 
     const showStatus = (msg, isError = true) => {
       const el = document.getElementById("status");
@@ -57,30 +94,45 @@
       el.style.color = isError ? "red" : "green";
     };
 
+    const updateBalance = async () => {
+      try {
+        const balance = await connection.getBalance(new solanaWeb3.PublicKey(userPublicKey));
+        document.getElementById("balance").innerText = `Balance: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(3)} SOL`;
+      } catch {
+        document.getElementById("balance").innerText = `Balance: 0 SOL`;
+      }
+    }
+
     document.getElementById("connect-btn").onclick = async () => {
       const selected = document.getElementById("wallet-select").value;
       try {
         if (selected === "phantom" && window.solana && window.solana.isPhantom) {
           provider = window.solana;
-        } else if (selected === "solflare" && window.solflare) {
+        } else if (selected === "solflare" && window.solflare && window.solflare.isSolflare) {
           provider = window.solflare;
         } else {
-          showStatus("Selected wallet not found. Install it in your browser.");
+          showStatus("Selected wallet not found. Install it.");
           return;
         }
 
         const resp = await provider.connect();
         userPublicKey = resp.publicKey.toString();
         showStatus("Connected: " + userPublicKey, false);
+        updateBalance();
       } catch (err) {
         console.error(err);
         showStatus("Wallet connection failed.");
       }
     };
 
+    document.getElementById("solAmount").oninput = (e) => {
+      const sol = parseFloat(e.target.value);
+      document.getElementById("woofaiAmount").innerText = sol > 0 ? sol * 1000000 : 0;
+    };
+
     document.getElementById("buy-btn").onclick = async () => {
       if (!provider || !userPublicKey) {
-        showStatus("Please connect your wallet first.");
+        showStatus("Connect your wallet first.");
         return;
       }
 
@@ -91,7 +143,6 @@
       }
 
       try {
-        const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
         const transaction = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
             fromPubkey: new solanaWeb3.PublicKey(userPublicKey),
@@ -101,17 +152,17 @@
         );
 
         transaction.feePayer = new solanaWeb3.PublicKey(userPublicKey);
-        let blockhashObj = await connection.getLatestBlockhash();
+        const blockhashObj = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhashObj.blockhash;
 
-        let signed = await provider.signTransaction(transaction);
-        let signature = await connection.sendRawTransaction(signed.serialize());
-        showStatus("Transaction sent: " + signature, false);
+        const signed = await provider.signTransaction(transaction);
+        const sig = await connection.sendRawTransaction(signed.serialize());
+        showStatus("Transaction sent: " + sig, false);
+        updateBalance();
       } catch (err) {
         console.error(err);
         showStatus("Transaction failed: " + (err.message || err));
       }
     };
-  </script>
-</body>
+  </script></body>
 </html>
