@@ -3,104 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WoFAI Token Presale</title>
+  <title>WoFAI Presale</title>
+
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.11.15/lib/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.11.14/lib/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.11.15/lib/phantom.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.11.15/lib/solflare.umd.min.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f8f8f8;
       text-align: center;
       padding: 2rem;
-      background: #f9f9f9;
     }
-    button {
-      padding: 1rem 2rem;
+    button, select {
+      padding: 0.75rem 1.5rem;
       font-size: 1rem;
-      margin: 1rem;
-      cursor: pointer;
-      border-radius: 8px;
+      margin: 0.5rem;
+      border-radius: 6px;
       border: none;
-      background-color: #512da8;
+      background: #512da8;
       color: white;
+      cursor: pointer;
+    }
+    input {
+      padding: 0.5rem;
+      width: 200px;
+      margin-top: 1rem;
     }
     #status {
       margin-top: 1rem;
-      font-size: 1rem;
-    }
-    img {
-      width: 120px;
     }
   </style>
 </head>
 <body>
-  <img src="https://crimson-certain-wolf-336.mypinata.cloud/ipfs/bafybeih3iwshjpvlxlsbg6mazrv77qu3inzpmixvznyaihqa2ut674nklu" alt="WoFAI Logo">
-  <h1>Buy WoFAI Token</h1>
+
+  <h1>WoFAI Token Presale</h1>
   <p>1 SOL = 1,000,000 WoFAI</p>
 
-  <button id="connect-wallet">Connect Wallet</button>
-  <br/>
+  <select id="wallet-selector">
+    <option value="phantom">Phantom</option>
+    <option value="solflare">Solflare</option>
+  </select>
+  <button id="connect">Connect Wallet</button>
 
-  <input type="number" id="solAmount" placeholder="Enter amount in SOL" step="0.01" min="0.01"/>
-  <button id="buy-token">Buy Now</button>
+  <br><br>
+  <input type="number" id="solAmount" placeholder="Amount in SOL" step="0.01" min="0.01">
+  <br>
+  <button id="buy">Buy Now</button>
 
   <div id="status"></div>
 
   <script>
-    let provider = null;
+    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = solanaWeb3;
+    const receiver = new PublicKey("GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy");
+
+    let wallet = null;
     let publicKey = null;
-    const receiverAddress = "GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy";
 
-    window.onload = () => {
-      if ('solana' in window) {
-        provider = window.solana;
-      } else {
-        document.getElementById('status').innerText = "Phantom Wallet not found!";
-      }
+    const wallets = {
+      phantom: new solanaWalletAdapterWallets.PhantomWalletAdapter(),
+      solflare: new solanaWalletAdapterWallets.SolflareWalletAdapter()
     };
 
-    document.getElementById('connect-wallet').onclick = async () => {
+    document.getElementById("connect").onclick = async () => {
+      const selected = document.getElementById("wallet-selector").value;
+      wallet = wallets[selected];
+
       try {
-        const resp = await provider.connect();
-        publicKey = resp.publicKey.toString();
-        document.getElementById('status').innerText = `Connected: ${publicKey}`;
+        await wallet.connect();
+        publicKey = wallet.publicKey;
+        document.getElementById("status").innerText = "Connected: " + publicKey.toBase58();
       } catch (err) {
-        document.getElementById('status').innerText = "Wallet connection failed.";
+        console.error(err);
+        document.getElementById("status").innerText = "Wallet connection failed.";
       }
     };
 
-    document.getElementById('buy-token').onclick = async () => {
-      if (!provider || !publicKey) {
-        document.getElementById('status').innerText = "Please connect your wallet first.";
+    document.getElementById("buy").onclick = async () => {
+      if (!wallet || !wallet.connected) {
+        document.getElementById("status").innerText = "Connect your wallet first.";
         return;
       }
 
-      const sol = parseFloat(document.getElementById('solAmount').value);
-      if (isNaN(sol) || sol <= 0) {
-        document.getElementById('status').innerText = "Please enter a valid amount of SOL.";
+      const amount = parseFloat(document.getElementById("solAmount").value);
+      if (!amount || amount <= 0) {
+        document.getElementById("status").innerText = "Enter a valid SOL amount.";
         return;
       }
+
+      const connection = new Connection("https://api.mainnet-beta.solana.com");
+      const tx = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: receiver,
+          lamports: amount * LAMPORTS_PER_SOL,
+        })
+      );
 
       try {
-        const transaction = new window.solanaWeb3.Transaction().add(
-          window.solanaWeb3.SystemProgram.transfer({
-            fromPubkey: provider.publicKey,
-            toPubkey: new window.solanaWeb3.PublicKey(receiverAddress),
-            lamports: sol * window.solanaWeb3.LAMPORTS_PER_SOL
-          })
-        );
+        const { blockhash } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = wallet.publicKey;
 
-        const { blockhash } = await (new window.solanaWeb3.Connection("https://api.mainnet-beta.solana.com")).getRecentBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = provider.publicKey;
-
-        const signed = await provider.signTransaction(transaction);
-        const signature = await (new window.solanaWeb3.Connection("https://api.mainnet-beta.solana.com")).sendRawTransaction(signed.serialize());
-        document.getElementById('status').innerText = `Transaction sent! Signature: ${signature}`;
-      } catch (e) {
-        console.error(e);
-        document.getElementById('status').innerText = "Transaction failed.";
+        const signed = await wallet.signTransaction(tx);
+        const sig = await connection.sendRawTransaction(signed.serialize());
+        document.getElementById("status").innerText = "Transaction sent: " + sig;
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Transaction failed.";
       }
     };
   </script>
-
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 </body>
 </html>
