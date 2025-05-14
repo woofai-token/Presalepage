@@ -5,7 +5,7 @@
   <title>WFAI Presale</title>
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.9.15/dist/wallets.iife.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-solflare@0.1.8/dist/solflare.iife.js"></script>
+  <script src="https://unpkg.com/@solflare-wallet/sdk@latest/lib/index.iife.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -54,48 +54,47 @@
       max-width: 500px;
       margin: 0 auto;
     }
+
     .modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-}
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+    }
 
-.modal-content {
-  background-color: #111;
-  margin: 15% auto;
-  padding: 20px;
-  border: 2px solid #0f0;
-  width: 300px;
-  border-radius: 10px;
-  color: #0f0;
-}
+    .modal-content {
+      background-color: #111;
+      margin: 15% auto;
+      padding: 20px;
+      border: 2px solid #0f0;
+      width: 300px;
+      border-radius: 10px;
+      color: #0f0;
+    }
 
-.close {
-  float: right;
-  font-size: 28px;
-  cursor: pointer;
-}
+    .close {
+      float: right;
+      font-size: 28px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🚀 WFAI Token Presale</h1>
+    <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
 
-    <!-- Connect Button -->
-<button id="connectBtn" class="wallet-btn">Connect Wallet</button>
+    <div id="walletModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Select Wallet</h2>
+        <button id="phantomBtn" class="wallet-btn">Phantom</button>
+        <button id="solflareBtn" class="wallet-btn">Solflare</button>
+      </div>
+    </div>
 
-<!-- Modal -->
-<div id="walletModal" class="modal">
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <h2>Select Wallet</h2>
-    <button id="phantomBtn" class="wallet-btn">Phantom</button>
-    <button id="solflareBtn" class="wallet-btn">Solflare</button>
-  </div>
-</div>
     <div id="walletAddress"></div>
 
     <div style="margin-top: 30px;">
@@ -111,49 +110,55 @@
 
   <script>
     const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
-    const PRESALE_WALLET = new solanaWeb3.PublicKey("GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy"); // replace me
+    const PRESALE_WALLET = new solanaWeb3.PublicKey("GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy");
     const TOKENS_PER_SOL = 1000000;
 
     let wallet = null;
 
     const modal = document.getElementById("walletModal");
-const connectBtn = document.getElementById("connectBtn");
-const closeBtn = document.querySelector(".close");
+    const connectBtn = document.getElementById("connectBtn");
+    const closeBtn = document.querySelector(".close");
 
-connectBtn.onclick = () => modal.style.display = "block";
-closeBtn.onclick = () => modal.style.display = "none";
-window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
+    connectBtn.onclick = () => modal.style.display = "block";
+    closeBtn.onclick = () => modal.style.display = "none";
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
 
-document.getElementById("phantomBtn").addEventListener("click", async () => {
-  if (window.solana?.isPhantom) {
-    try {
-      await window.solana.connect();
-      wallet = window.solana;
-      document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
-      modal.style.display = "none";
-    } catch (err) {
-      alert("Phantom connection failed.");
-    }
-  } else {
-    alert("Please install Phantom Wallet.");
-  }
-});
+    document.getElementById("phantomBtn").addEventListener("click", async () => {
+      if (window.solana?.isPhantom) {
+        try {
+          const res = await window.solana.connect();
+          wallet = window.solana;
+          document.getElementById("walletAddress").innerText = `Wallet: ${res.publicKey.toString()}`;
+          modal.style.display = "none";
+        } catch (err) {
+          alert("Phantom connection failed.");
+        }
+      } else {
+        window.open("https://phantom.app", "_blank");
+      }
+    });
 
-document.getElementById("solflareBtn").addEventListener("click", async () => {
-  const solflare = new solflareWalletAdapter.Solflare();
-  if (solflare.isSolflare) {
-    try {
-      await solflare.connect();
-      wallet = solflare;
-      document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
-      modal.style.display = "none";
-    } catch (err) {
-      alert("Solflare connection failed.");
-    }
-  } else {
-    alert("Please install Solflare Wallet.");
-  }
-});
+    document.getElementById("solflareBtn").addEventListener("click", async () => {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        const redirectLink = encodeURIComponent(window.location.href);
+        window.location.href = `solflare://connect?redirect_link=${redirectLink}`;
+      } else {
+        const solflare = new SolflareWalletSDK.Solflare();
+        if (solflare.isSolflare) {
+          try {
+            await solflare.connect();
+            wallet = solflare;
+            document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
+            modal.style.display = "none";
+          } catch (err) {
+            alert("Solflare connection failed.");
+          }
+        } else {
+          window.open("https://solflare.com", "_blank");
+        }
+      }
+    });
 
     document.getElementById("solAmount").addEventListener("input", () => {
       const val = parseFloat(document.getElementById("solAmount").value || "0");
@@ -209,9 +214,8 @@ document.getElementById("solflareBtn").addEventListener("click", async () => {
       }
     }
 
-    // Timer logic
     const countdown = () => {
-      const end = new Date(Date.now() + 1000 * 60 * 60 * 24 * 45); // 45 days from now
+      const end = new Date(Date.now() + 1000 * 60 * 60 * 24 * 45);
       const x = setInterval(() => {
         const now = new Date().getTime();
         const distance = end - now;
