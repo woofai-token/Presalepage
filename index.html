@@ -7,89 +7,159 @@
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
   <!-- Solflare Wallet SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@solflare-wallet/sdk@1.4.2/dist/index.iife.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #000;
-      color: #0f0;
-      text-align: center;
-      padding: 50px;
+    :root {
+      --primary: #00ff88;
+      --secondary: #17002e;
     }
 
-    h1 {
-      font-size: 3em;
-      color: #0f0;
+    body {
+      font-family: 'Arial', sans-serif;
+      background: var(--secondary);
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      width: 200px;
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .card {
+      background: linear-gradient(145deg, #1a003a, #0d001f);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
     .wallet-btn, .buy-btn {
-      padding: 12px 25px;
-      font-size: 16px;
-      background: #0f0;
-      color: black;
+      background: var(--primary);
+      color: var(--secondary);
       border: none;
-      border-radius: 8px;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-weight: bold;
       cursor: pointer;
+      transition: all 0.3s;
       margin: 10px;
     }
 
+    .wallet-btn:hover, .buy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+    }
+
     input[type="number"] {
-      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid var(--primary);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
       font-size: 16px;
-      border-radius: 6px;
-      border: 1px solid #0f0;
-      background: black;
-      color: #0f0;
-      width: 200px;
+      width: 100%;
+      margin: 15px 0;
     }
 
     .timer {
       font-size: 1.5em;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    #tokenomicsChart {
       margin-top: 30px;
-    }
-
-    .conversion {
-      margin-top: 10px;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
+      max-height: 400px;
     }
 
     .modal {
       display: none;
       position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
       z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
     }
 
     .modal-content {
-      background-color: #111;
-      margin: 15% auto;
-      padding: 20px;
-      border: 2px solid #0f0;
-      width: 300px;
-      border-radius: 10px;
-      color: #0f0;
+      background: var(--secondary);
+      padding: 30px;
+      border-radius: 15px;
+      position: relative;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 400px;
+      text-align: center;
     }
 
     .close {
-      float: right;
-      font-size: 28px;
+      color: var(--primary);
+      font-size: 24px;
+      position: absolute;
+      right: 20px;
+      top: 10px;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🚀 WFAI Token Presale</h1>
+    <header>
+      <img src="https://gateway.pinata.cloud/ipfs/bafybeih3iwshjpvlxlsbg6mazrv77qu3inzpmixvznyaihqa2ut674nklu" alt="WFAI Logo" class="logo">
+      <h1>WFAI Token Presale</h1>
+    </header>
 
-    <!-- Connect Button -->
-    <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
+    <div class="grid">
+      <div class="card">
+        <h2>💰 Presale</h2>
+        <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
+        <div id="walletAddress" style="margin: 15px 0;"></div>
 
-    <!-- Modal -->
+        <input type="number" id="solAmount" placeholder="Enter SOL Amount" min="0" step="0.1">
+        <div class="conversion" style="margin: 15px 0;">
+          <strong>Exchange Rate:</strong> 1 SOL = 10,000,000 WFAI<br>
+          <strong>You will receive:</strong> <span id="tokenOutput">0</span> WFAI
+        </div>
+        <button class="buy-btn" onclick="buyTokens()">Buy WFAI Now</button>
+
+        <div class="timer">
+          ⏳ Presale ends in: <span id="countdown"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Tokenomics</h2>
+        <canvas id="tokenomicsChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Wallet Modal -->
     <div id="walletModal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
@@ -98,153 +168,159 @@
         <button id="solflareBtn" class="wallet-btn">Solflare</button>
       </div>
     </div>
-
-    <div id="walletAddress"></div>
-
-    <div style="margin-top: 30px;">
-      <input type="number" id="solAmount" placeholder="Enter SOL Amount" min="0" step="0.01">
-      <div class="conversion">You will receive: <span id="tokenOutput">0</span> WFAI</div>
-      <button class="buy-btn" onclick="buyTokens()">Buy WFAI</button>
-    </div>
-
-    <div class="timer">
-      ⏳ Presale ends in: <span id="countdown"></span>
-    </div>
   </div>
 
   <script>
     const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
-    const PRESALE_WALLET = new solanaWeb3.PublicKey("GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy"); // replace me
-    const TOKENS_PER_SOL = 1000000;
+    const PRESALE_WALLET = new solanaWeb3.PublicKey("GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy");
+    const TOKENS_PER_SOL = 10000000; // 10M per SOL
 
     let wallet = null;
+    let solflareWallet = null;
 
-    const modal = document.getElementById("walletModal");
-    const connectBtn = document.getElementById("connectBtn");
-    const closeBtn = document.querySelector(".close");
-
-    connectBtn.onclick = () => modal.style.display = "block";
-    closeBtn.onclick = () => modal.style.display = "none";
-    window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
-
-    // Detect mobile device
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
+    // Wallet Connection Handlers
     document.getElementById("phantomBtn").addEventListener("click", async () => {
-      if (isMobile) {
-        // Redirect to Phantom app using deep link
-        const dappUrl = encodeURIComponent(window.location.origin);
-        const redirectUrl = encodeURIComponent(window.location.href);
-        const phantomDeepLink = `https://phantom.app/ul/v1/connect?app_url=${dappUrl}&redirect_link=${redirectUrl}&cluster=devnet`;
-        window.location.href = phantomDeepLink;
-      } else if (window.solana?.isPhantom) {
-        try {
+      try {
+        if (window.solana?.isPhantom) {
           await window.solana.connect();
           wallet = window.solana;
-          document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
+          updateWalletDisplay();
           modal.style.display = "none";
-        } catch (err) {
-          alert("Phantom connection failed.");
+        } else if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          window.location.href = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`;
+        } else {
+          alert("Please install Phantom Wallet");
+          window.open("https://phantom.app/download", "_blank");
         }
-      } else {
-        alert("Please install Phantom Wallet.");
-        window.open("https://phantom.app/download", "_blank");
+      } catch (error) {
+        console.error("Phantom connection error:", error);
+        alert("Failed to connect Phantom Wallet");
       }
     });
 
     document.getElementById("solflareBtn").addEventListener("click", async () => {
-      if (isMobile) {
-        // Redirect to Solflare app using deep link
-        window.location.href = "solflare://open";
-      } else {
-        try {
-          const solflare = new Solflare();
-          await solflare.connect();
-          wallet = solflare;
-          document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
-          modal.style.display = "none";
-        } catch (err) {
-          alert("Solflare connection failed.");
-        }
-      }
-    });
-
-    document.getElementById("solAmount").addEventListener("input", () => {
-      const val = parseFloat(document.getElementById("solAmount").value || "0");
-      document.getElementById("tokenOutput").innerText = Math.floor(val * TOKENS_PER_SOL);
-    });
-
-    async function buyTokens() {
-      if (!wallet) return alert("Connect your wallet first.");
-      const amountSOL = parseFloat(document.getElementById("solAmount").value);
-      if (!amountSOL || amountSOL <= 0) return alert("Enter a valid amount.");
-
       try {
-        const buyer = wallet.publicKey;
-        const lamports = solanaWeb3.LAMPORTS_PER_SOL * amountSOL;
-
-        const transaction = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: buyer,
-            toPubkey: PRESALE_WALLET,
-            lamports: lamports
-          })
-        );
-
-        transaction.feePayer = buyer;
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-
-        const signedTx = await wallet.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signedTx.serialize());
-        await connection.confirmTransaction(signature);
-
-        alert("✅ Transaction sent! Verifying...");
-
-        const res = await fetch("https://woofaiserver.onrender.com/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            signature,
-            buyer: buyer.toString(),
-            amount: amountSOL
-          })
-        });
-
-        const result = await res.json();
-        if (res.ok) {
-          alert(`✅ You received ${result.tokensSent} WFAI!\nTx: ${result.tokenTx}`);
-        } else {
-          alert(`❌ Backend error: ${result.message}`);
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Transaction failed.");
+        solflareWallet = new Solflare();
+        await solflareWallet.connect();
+        wallet = solflareWallet;
+        updateWalletDisplay();
+        modal.style.display = "none";
+      } catch (error) {
+        console.error("Solflare connection error:", error);
+        alert("Failed to connect Solflare. Ensure extension is installed");
       }
+    });
+
+    function updateWalletDisplay() {
+      document.getElementById("walletAddress").innerHTML = `
+        Connected: ${wallet.publicKey.toString().slice(0, 6)}...${wallet.publicKey.toString().slice(-4)}
+      `;
     }
 
-    // Timer logic
-    const countdown = () => {
-      const end = new Date(Date.now() + 1000 * 60 * 60 * 24 * 45); // 45 days from now
-      const x = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = end - now;
-
-        if (distance < 0) {
-          clearInterval(x);
-          document.getElementById("countdown").innerText = "Presale Ended";
-          return;
+    // Tokenomics Chart
+    const ctx = document.getElementById('tokenomicsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Presale (50%)', 'Airdrop (10%)', 'Liquidity Pool (33%)', 'Marketing (7%)', 'Development (5%)', 'Team (5%)'],
+        datasets: [{
+          data: [50, 10, 33, 7, 5, 5],
+          backgroundColor: [
+            '#00ff88',
+            '#7b00ff',
+            '#ff007b',
+            '#ffd700',
+            '#00ffff',
+            '#ff6600'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' }
         }
+      }
+    });
 
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hrs = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const secs = Math.floor((distance % (1000 * 60)) / 1000);
-        document.getElementById("countdown").innerText = `${days}d ${hrs}h ${mins}m ${secs}s`;
-      }, 1000);
-    };
+    // Rest of the code (transaction handling, timer, etc.) remains similar to previous
+    // with TOKENS_PER_SOL updated to 10,000,000 and UI references updated
 
-    countdown();
+    // [Include previous transaction handling and timer code here]
+    // [Add proper error handling and loading states as needed]
+ // Buy Token Function
+  async function buyTokens() {
+    if (!wallet?.publicKey) {
+      alert("Please connect a wallet first.");
+      return;
+    }
+
+    const solAmount = parseFloat(document.getElementById("solAmount").value);
+    if (isNaN(solAmount) || solAmount <= 0) {
+      alert("Please enter a valid SOL amount.");
+      return;
+    }
+
+    try {
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: PRESALE_WALLET,
+          lamports: solanaWeb3.LAMPORTS_PER_SOL * solAmount,
+        })
+      );
+
+      transaction.feePayer = wallet.publicKey;
+      const { blockhash } = await connection.getRecentBlockhash();
+      transaction.recentBlockhash = blockhash;
+
+      let signed;
+      if (wallet.signTransaction) {
+        signed = await wallet.signTransaction(transaction);
+      } else if (wallet.sign) {
+        signed = await wallet.sign(transaction);
+      }
+
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature, 'confirmed');
+
+      alert(`Success! TX: ${signature}`);
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      alert("Transaction failed! Check console.");
+    }
+  }
+
+  // Update token output
+  document.getElementById("solAmount").addEventListener("input", () => {
+    const solAmount = parseFloat(document.getElementById("solAmount").value);
+    const tokens = solAmount > 0 ? solAmount * TOKENS_PER_SOL : 0;
+    document.getElementById("tokenOutput").innerText = tokens.toLocaleString();
+  });
+
+  // Presale Countdown
+  const endTime = new Date("2025-06-01T00:00:00Z").getTime(); // adjust as needed
+
+  function updateCountdown() {
+    const now = new Date().getTime();
+    const distance = endTime - now;
+
+    if (distance < 0) {
+      document.getElementById("countdown").innerText = "Presale Ended";
+      return;
+    }
+
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    document.getElementById("countdown").innerText =
+      `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  setInterval(updateCountdown, 1000);
+  updateCountdown();
   </script>
 </body>
 </html>
