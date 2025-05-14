@@ -140,7 +140,7 @@ document.getElementById("phantomBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("solflareBtn").addEventListener("click", async () => {
-  const solflare = new Solflare();
+  const solflare = new solflareWalletAdapter.Solflare();
   if (solflare.isSolflare) {
     try {
       await solflare.connect();
