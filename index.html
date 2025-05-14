@@ -5,12 +5,8 @@
   <title>WFAI Presale</title>
   <!-- Solana Web3.js -->
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
-  <!-- Solflare Wallet SDK via CDN -->
-  <script type="module">
-    import Solflare from 'https://cdn.skypack.dev/@solflare-wallet/sdk';
-
-    window.Solflare = Solflare;
-  </script>
+  <!-- Solflare Wallet SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@solflare-wallet/sdk@1.4.2/dist/index.iife.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -131,8 +127,17 @@
     closeBtn.onclick = () => modal.style.display = "none";
     window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
 
+    // Detect mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
     document.getElementById("phantomBtn").addEventListener("click", async () => {
-      if (window.solana?.isPhantom) {
+      if (isMobile) {
+        // Redirect to Phantom app using deep link
+        const dappUrl = encodeURIComponent(window.location.origin);
+        const redirectUrl = encodeURIComponent(window.location.href);
+        const phantomDeepLink = `https://phantom.app/ul/v1/connect?app_url=${dappUrl}&redirect_link=${redirectUrl}&cluster=devnet`;
+        window.location.href = phantomDeepLink;
+      } else if (window.solana?.isPhantom) {
         try {
           await window.solana.connect();
           wallet = window.solana;
@@ -143,37 +148,24 @@
         }
       } else {
         alert("Please install Phantom Wallet.");
+        window.open("https://phantom.app/download", "_blank");
       }
     });
 
     document.getElementById("solflareBtn").addEventListener("click", async () => {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
         // Redirect to Solflare app using deep link
-        const currentUrl = encodeURIComponent(window.location.href);
-        window.location.href = `https://solflare.com/ul/v1/browse/${currentUrl}?ref=${currentUrl}`;
-        return;
-      }
-
-      if (window.Solflare) {
-        const solflare = new window.Solflare();
-        solflare.on('connect', () => {
+        window.location.href = "solflare://open";
+      } else {
+        try {
+          const solflare = new Solflare();
+          await solflare.connect();
           wallet = solflare;
           document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
           modal.style.display = "none";
-        });
-        solflare.on('disconnect', () => {
-          wallet = null;
-          document.getElementById("walletAddress").innerText = "";
-        });
-
-        try {
-          await solflare.connect();
         } catch (err) {
           alert("Solflare connection failed.");
         }
-      } else {
-        alert("Solflare SDK not loaded.");
       }
     });
 
