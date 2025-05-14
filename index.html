@@ -3,9 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>WFAI Presale</title>
+  <!-- Solana Web3.js -->
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.9.15/dist/wallets.iife.js"></script>
-  <script src="https://unpkg.com/@solflare-wallet/sdk@latest/lib/index.iife.js"></script>
+  <!-- Solflare Wallet SDK via CDN -->
+  <script type="module">
+    import Solflare from 'https://cdn.skypack.dev/@solflare-wallet/sdk';
+
+    window.Solflare = Solflare;
+  </script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -84,8 +89,11 @@
 <body>
   <div class="container">
     <h1>🚀 WFAI Token Presale</h1>
+
+    <!-- Connect Button -->
     <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
 
+    <!-- Modal -->
     <div id="walletModal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
@@ -110,7 +118,7 @@
 
   <script>
     const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
-    const PRESALE_WALLET = new solanaWeb3.PublicKey("GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy");
+    const PRESALE_WALLET = new solanaWeb3.PublicKey("GWkwfF8BbA591V4ZFTLDJJ9eRy5Mhp2Z9zNBNFvf6cgy"); // replace me
     const TOKENS_PER_SOL = 1000000;
 
     let wallet = null;
@@ -126,37 +134,46 @@
     document.getElementById("phantomBtn").addEventListener("click", async () => {
       if (window.solana?.isPhantom) {
         try {
-          const res = await window.solana.connect();
+          await window.solana.connect();
           wallet = window.solana;
-          document.getElementById("walletAddress").innerText = `Wallet: ${res.publicKey.toString()}`;
+          document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
           modal.style.display = "none";
         } catch (err) {
           alert("Phantom connection failed.");
         }
       } else {
-        window.open("https://phantom.app", "_blank");
+        alert("Please install Phantom Wallet.");
       }
     });
 
     document.getElementById("solflareBtn").addEventListener("click", async () => {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
-        const redirectLink = encodeURIComponent(window.location.href);
-        window.location.href = `solflare://connect?redirect_link=${redirectLink}`;
-      } else {
-        const solflare = new SolflareWalletSDK.Solflare();
-        if (solflare.isSolflare) {
-          try {
-            await solflare.connect();
-            wallet = solflare;
-            document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
-            modal.style.display = "none";
-          } catch (err) {
-            alert("Solflare connection failed.");
-          }
-        } else {
-          window.open("https://solflare.com", "_blank");
+        // Redirect to Solflare app using deep link
+        const currentUrl = encodeURIComponent(window.location.href);
+        window.location.href = `https://solflare.com/ul/v1/browse/${currentUrl}?ref=${currentUrl}`;
+        return;
+      }
+
+      if (window.Solflare) {
+        const solflare = new window.Solflare();
+        solflare.on('connect', () => {
+          wallet = solflare;
+          document.getElementById("walletAddress").innerText = `Wallet: ${wallet.publicKey.toString()}`;
+          modal.style.display = "none";
+        });
+        solflare.on('disconnect', () => {
+          wallet = null;
+          document.getElementById("walletAddress").innerText = "";
+        });
+
+        try {
+          await solflare.connect();
+        } catch (err) {
+          alert("Solflare connection failed.");
         }
+      } else {
+        alert("Solflare SDK not loaded.");
       }
     });
 
@@ -214,8 +231,9 @@
       }
     }
 
+    // Timer logic
     const countdown = () => {
-      const end = new Date(Date.now() + 1000 * 60 * 60 * 24 * 45);
+      const end = new Date(Date.now() + 1000 * 60 * 60 * 24 * 45); // 45 days from now
       const x = setInterval(() => {
         const now = new Date().getTime();
         const distance = end - now;
